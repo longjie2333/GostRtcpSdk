@@ -12,6 +12,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,16 +32,68 @@ type Config struct {
 	Logger *slog.Logger
 }
 
-// Run forwards remote TCP streams until ctx is cancelled. It owns the TLS
-// connection, smux session and target sockets; cancellation closes them and
-// waits for forwarding goroutines. BIND failures back off 1,2,4,5 seconds;
-// session/peer-header failures discard the session and retry after 1 second.
-func Run(ctx context.Context, cfg Config, target string) error {
-	for _, addr := range []string{cfg.Server, target} {
-		if _, _, err := net.SplitHostPort(addr); err != nil {
-			return err
-		}
+// Client owns one forwarding service. Construct with NewClient; do not copy it.
+// Configuration is immutable; UpdateTarget may run concurrently with Run.
+type Client struct {
+	cfg     Config
+	mu      sync.RWMutex
+	target  string
+	running bool
+}
+
+// NewClient validates server/target address syntax without network connections.
+func NewClient(cfg Config, target string) (*Client, error) {
+	if _, _, err := net.SplitHostPort(cfg.Server); err != nil {
+		return nil, err
 	}
+	c := &Client{cfg: cfg}
+	if err := c.UpdateTarget(target); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+// UpdateTarget atomically changes the default target for streams whose target
+// has not yet been selected. Existing connections are unchanged. Validation is
+// syntactic only: no DNS lookup or connection is attempted; failure keeps the
+// previous target. A peer-provided target override still takes precedence.
+func (c *Client) UpdateTarget(target string) error {
+	host, port, err := net.SplitHostPort(target)
+	if err != nil {
+		return fmt.Errorf("invalid target: %w", err)
+	}
+	n, err := strconv.ParseUint(port, 10, 16)
+	if err != nil || n == 0 || host == "" || strings.ContainsAny(host, " \t\r\n") {
+		return fmt.Errorf("invalid target: expected host and numeric port 1..65535")
+	}
+	c.mu.Lock()
+	c.target = target
+	c.mu.Unlock()
+	return nil
+}
+
+func (c *Client) currentTarget() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.target
+}
+
+// Run blocks until cancellation and owns all session/forwarding resources.
+// Only one Run may be active per Client. After it returns, Run may be called
+// again and retains the latest target. BIND retries keep their existing policy.
+func (c *Client) Run(ctx context.Context) error {
+	if _, _, err := net.SplitHostPort(c.cfg.Server); err != nil {
+		return err
+	}
+	c.mu.Lock()
+	if c.running {
+		c.mu.Unlock()
+		return fmt.Errorf("client is already running")
+	}
+	c.running = true
+	c.mu.Unlock()
+	defer func() { c.mu.Lock(); c.running = false; c.mu.Unlock() }()
+	cfg := c.cfg
 	log := cfg.Logger
 	if log == nil {
 		log = slog.Default()
@@ -51,7 +104,7 @@ func Run(ctx context.Context, cfg Config, target string) error {
 	for ctx.Err() == nil {
 		session, bound, err := bind(ctx, cfg)
 		if err == nil {
-			log.Info("remote TCP listening", "bind", bound, "target", target)
+			log.Info("remote TCP listening", "bind", bound, "target", c.currentTarget())
 			stop := context.AfterFunc(ctx, func() { session.Close() })
 			for {
 				stream, e := session.AcceptStream()
@@ -72,7 +125,7 @@ func Run(ctx context.Context, cfg Config, target string) error {
 					break
 				}
 				delay = 0
-				dst := target
+				dst := c.currentTarget()
 				if override != "" {
 					dst = override
 				}

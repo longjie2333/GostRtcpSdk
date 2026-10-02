@@ -21,6 +21,10 @@ SDK 精简自 [go-gost/x v0.16.0](https://github.com/go-gost/x/tree/14fed91c6245
 
 ## 已删除的范围
 
-不提供服务端、UDP、通用 CONNECT、SOCKS/SSH、任意代理链、热重载、管理 API、公开 Listener/Conn、旧 CLI 或旧 API 适配。只保留 Config 和 Run；原版公开连接包装的共享 deadline 入口也随接口删除，宿主不能直接操作 stream。
+不提供服务端、UDP、通用 CONNECT、SOCKS/SSH、任意代理链、通用配置热重载、管理 API、公开 Listener/Conn、旧 CLI 或旧 API 适配。公开 Config、NewClient、Client.Run 和 Client.UpdateTarget；仅默认 target 支持热更新。原版公开连接包装的共享 deadline 入口也随接口删除，宿主不能直接操作 stream。
 
 日志和 context 生命周期是面向 SDK 的接口，不模拟整个 GOST 框架的指标、记录器或进程管理。SDK 只维护当前已声明的单节点 TCP 客户端行为，不声称与所有 GOST 历史版本和任意配置等价。
+
+## SDK 增量行为
+
+UpdateTarget 使用并发安全快照，新流选新目标，已有连接不迁移。不改变 Relay/smux 协议或远端监听。目标语法要求非空 host 和有效数字端口，非法更新不改变旧值；构造函数使用同一校验。

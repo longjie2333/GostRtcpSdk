@@ -9,8 +9,8 @@ src/client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
 src/pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
 
 Only the CLIENT for the user's single-hop relay+tls TCP BIND configuration is
-retained. The public endpoint runs official gost. Config and Run are the only
-exported declarations; there is no server or legacy API adapter.
+retained. The public endpoint runs official gost. The SDK adds Client instances and concurrent default-target updates.
+The old package-level Run is removed; there is no server or legacy adapter.
 Client response handling also follows connector/relay/listener.go. TLS dialing
 and stream handling now use crypto/tls.Dialer and smux.Stream directly.
 Read docs/behavior.md for preserved side effects and explicit boundaries.

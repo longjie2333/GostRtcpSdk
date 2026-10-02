@@ -1,6 +1,6 @@
 # GostRtcpSdk
 
-轻量 Go SDK：连接官方 GOST 的 `relay+tls` 服务端，把远端 TCP 端口转发到本机可达的服务。**只包含客户端**，公开 API 为 `Config` 和阻塞运行的 `Run`；取消 `context` 会关闭会话、释放远端监听并等待转发任务退出。
+轻量 Go SDK：连接官方 GOST 的 `relay+tls` 服务端，把远端 TCP 端口转发到本机可达的服务。**只包含客户端**，通过 `NewClient` 创建 `Client`，使用 `Client.Run` 持续运行、`Client.UpdateTarget` 热更新默认目标；取消 `context` 会关闭会话、释放远端监听并等待转发任务退出。
 
 基线：GOST v3.3.0 / go-gost/x v0.16.0，要求 Go 1.23+。只支持 TCP、单个 Relay+TLS 节点与目标，不包含服务端或通用代理框架。
 
@@ -37,12 +37,25 @@ func main() {
         Bind:   "0.0.0.0:8080",
         User:   url.UserPassword("user", "password"),
     }
-    if err := rtcp.Run(ctx, cfg, "127.0.0.1:80");
+    client, err := rtcp.NewClient(cfg, "127.0.0.1:80")
+    if err != nil { log.Fatal(err) }
+    // 配置变更回调中可调用 client.UpdateTarget("127.0.0.1:8081")。
+    if err := client.Run(ctx);
         err != nil && !errors.Is(err, context.Canceled) {
         log.Fatal(err)
     }
 }
 ```
+
+运行期间可从配置变更回调调用：
+
+```go
+if err := client.UpdateTarget("127.0.0.1:8081"); err != nil {
+    log.Printf("更新失败，保留原目标: %v", err)
+}
+```
+
+更新只影响尚未选定目标的新流，已有连接继续使用原目标，不重建 TLS、smux 或远端监听。可并发调用；目标需为非空 host 和 1..65535 数字端口，不进行 DNS 查询或连通性探测。远端协议目标覆盖仍优先。旧包级 `Run` 已移除。
 
 公网端继续运行官方程序，例如：
 

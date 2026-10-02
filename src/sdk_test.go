@@ -15,10 +15,14 @@ import (
 	rtcp "example.com/gostrtcpsdk/src"
 )
 
-func ExampleRun() {
+func ExampleClient_Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // The host may stop before a connection is established.
-	err := rtcp.Run(ctx, rtcp.Config{Server: "127.0.0.1:1080", Bind: "127.0.0.1:8080"}, "127.0.0.1:80")
+	client, err := rtcp.NewClient(rtcp.Config{Server: "127.0.0.1:1080", Bind: "127.0.0.1:8080"}, "127.0.0.1:80")
+	if err != nil {
+		panic(err)
+	}
+	err = client.Run(ctx)
 	fmt.Println(errors.Is(err, context.Canceled))
 	// Output: true
 }
@@ -42,7 +46,10 @@ import (
 func main() {
  ctx, cancel := context.WithCancel(context.Background())
  cancel()
- err := rtcp.Run(ctx, rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:8080"}, "127.0.0.1:80")
+ client, err := rtcp.NewClient(rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:8080"}, "127.0.0.1:80")
+ if err != nil { panic(err) }
+ if err := client.UpdateTarget("localhost:81"); err != nil { panic(err) }
+ err = client.Run(ctx)
  if !errors.Is(err, context.Canceled) { panic(err) }
  fmt.Println("external SDK consumer: OK")
 }

@@ -5,7 +5,7 @@
 - Go 源码和测试放在 `src/`，示例放在 `src/examples/`；`go.mod`、`go.sum`、许可与工程配置保留在仓库根目录。SDK 导入路径为 `example.com/gostrtcpsdk/src`。
 
 - 本项目仅是 Go 客户端 SDK，连接官方 GOST Relay+TLS 服务端并转发本地 TCP 目标；不加入服务端、UDP、旧 API 兼容层或通用代理框架。
-- 优先使用标准库及现有 relay/smux 能力。保留最小的 `Config + Run` API，避免没有当前需求的抽象、配置和中间层。
+- 优先使用标准库及现有 relay/smux 能力。围绕 `Config + Client`、实例 Run 和 UpdateTarget 保持最小 API，避免没有当前需求的抽象、配置和中间层。
 - 修改源版本行为之前，先检查 `docs/behavior.md` 和已有测试。不得把修复或行为变化隐藏在重构中；将其作为独立逻辑目标，并同步测试、文档和变更说明。
 - 使用 `gofmt`，关注资源所有权、取消、重连、协议头边界和日志中不暴露密码。
 

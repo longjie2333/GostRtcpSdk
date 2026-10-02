@@ -3,10 +3,12 @@
 包名是 `rtcp`，module 标识为 `example.com/gostrtcpsdk`，导入路径为 `example.com/gostrtcpsdk/src`。
 
 ```go
-func Run(ctx context.Context, cfg Config, target string) error
+func NewClient(cfg Config, target string) (*Client, error)
+func (c *Client) Run(ctx context.Context) error
+func (c *Client) UpdateTarget(target string) error
 ```
 
-Run 会阻塞，适合宿主独立 goroutine 或前台服务调用；没有额外的 SDK Client、Start/Stop、全局单例或服务端对象。
+NewClient 不建立网络连接。Client.Run 会阻塞，同一实例只允许一个 Run 同时执行，重复调用返回错误。取消并等 Run 返回后可再次运行，保留最新目标。必须通过 NewClient 构造，实例不可复制；没有额外 Start/Stop 或全局单例。
 
 | 参数/字段 | 类型 | 要求与默认行为 |
 |---|---|---|
@@ -16,9 +18,18 @@ Run 会阻塞，适合宿主独立 goroutine 或前台服务调用；没有额�
 | `cfg.User` | `*url.Userinfo` | 使用 `url.UserPassword` 设置认证；nil 不发送认证 Feature，对端可能拒绝 |
 | `cfg.TLS` | `*tls.Config` | nil 时默认不验证证书；非 nil 会 Clone；未设置 ServerName 时从 Server 取主机名 |
 | `cfg.Logger` | `*slog.Logger` | nil 时使用 `slog.Default()`；Info 输出实际绑定地址，Debug 输出访客与转发事件 |
-| `target` | `string` | 从 SDK 所在机器拨号的 TCP 目标，如 `127.0.0.1:80`；必须符合 `host:port` 格式 |
+| `target` | `string` | 从 SDK 所在机器拨号的 TCP 目标，如 `127.0.0.1:80`；host 必须非空，端口为 1..65535 的数字，构造与更新使用同一校验 |
 
-配置及其引用对象在一次 Run 期间保持不变。需要改配置时先取消并等待旧 Run 返回，再以新配置启动。多个独立转发可由宿主调用多个 Run，各自使用上下文及不同远端端口。
+Config 及引用对象在实例使用期间保持不变。仅 target 可通过 UpdateTarget 热更新；修改服务器、认证或绑定配置需取消旧实例并创建新实例。多个独立转发使用不同 Client、上下文和远端端口。
+
+## target 热更新
+
+- 可在 Run 前、运行中、重连期间或停止后更新；校验失败返回错误，旧目标不变。不会做 DNS 查询或连通探测。
+- 更新与读取由锁保护；并发更新以实际写入顺序为准，每条流只读取一次完整快照。
+- 选择时点是解析访客回复之后、启动转发 goroutine 之前；已经选定目标的拨号和已有连接不迁移、不打断。
+- 远端可选第二 AddrFeature 仍覆盖默认 target；UpdateTarget 不改变这一源协议语义。
+- 暂时不可达但语法正确的目标可以更新成功，实际拨号失败时仅关闭对应流。
+- 旧包级 Run 删除，使用 NewClient → Client.Run。
 
 ## 证书验证
 
