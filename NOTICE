@@ -1,0 +1,21 @@
+Source and scope
+================
+Derived from github.com/go-gost/x v0.16.0,
+commit 14fed91c6245289e2e92ea60a97332a62c90fad0 (MIT, Copyright 2016 ginuerzh),
+as required by github.com/go-gost/gost v3.3.0.
+
+client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
+           internal/util/mux/mux.go; service/service.go; chain/router.go.
+pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
+
+Only the CLIENT for the user's single-hop relay+tls TCP BIND configuration is
+retained. The public endpoint runs official gost. Config and Run are the only
+exported declarations; there is no server or legacy API adapter.
+Client response handling also follows connector/relay/listener.go. TLS dialing
+and stream handling now use crypto/tls.Dialer and smux.Stream directly.
+Read docs/behavior.md for preserved side effects and explicit boundaries.
+
+Runtime protocol codecs and multiplexing use the original libraries:
+github.com/go-gost/relay v0.7.0 (MIT)
+github.com/xtaci/smux v1.5.31 (MIT)
+Their license texts are in THIRD_PARTY_LICENSES/.

@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+.tools/
+bin/
+coverage.out
+*.exe
+*.test
+*.log

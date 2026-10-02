@@ -1,0 +1,34 @@
+name: SDK checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - run: pwsh -File scripts/check.ps1 -UnitOnly
+  official-integration:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Download pinned official gost
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .tools/gost | Out-Null
+          Invoke-WebRequest https://github.com/go-gost/gost/releases/download/v3.3.0/gost_3.3.0_windows_amd64.zip -OutFile .tools/gost.zip
+          Expand-Archive -LiteralPath .tools/gost.zip -DestinationPath .tools/gost
+          $actual = (Get-FileHash .tools/gost/gost.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '6f6b66cbdc4a5aa5685d0017abd3f65843a28bcc2bb4e5b78d6d12a844a51aa8') { throw 'Official binary SHA256 mismatch' }
+      - name: Complete SDK checks
+        shell: pwsh
+        run: ./scripts/check.ps1 -GostBinary .tools/gost/gost.exe

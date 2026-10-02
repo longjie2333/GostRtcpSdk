@@ -1,0 +1,4 @@
+github.com/go-gost/relay v0.7.0 h1:J8e3Sba6DtBJQotXY5j5EaZNWwtv6Z9CoCFQsnrHNcE=
+github.com/go-gost/relay v0.7.0/go.mod h1:Dku0f5sfjOClrZFiDmQUrYYJ4uof7rnkCUBfsl0PSAI=
+github.com/xtaci/smux v1.5.31 h1:3ha7sHtH46h85Iv7MfQogxasuRt1KPRhoFB3S4rmHgU=
+github.com/xtaci/smux v1.5.31/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
