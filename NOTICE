@@ -4,9 +4,9 @@ Derived from github.com/go-gost/x v0.16.0,
 commit 14fed91c6245289e2e92ea60a97332a62c90fad0 (MIT, Copyright 2016 ginuerzh),
 as required by github.com/go-gost/gost v3.3.0.
 
-client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
+src/client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
            internal/util/mux/mux.go; service/service.go; chain/router.go.
-pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
+src/pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
 
 Only the CLIENT for the user's single-hop relay+tls TCP BIND configuration is
 retained. The public endpoint runs official gost. Config and Run are the only

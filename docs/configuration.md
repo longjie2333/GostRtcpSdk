@@ -1,6 +1,6 @@
 # 配置与 API
 
-包名是 `rtcp`，module 标识为 `example.com/gostrtcpsdk`。
+包名是 `rtcp`，module 标识为 `example.com/gostrtcpsdk`，导入路径为 `example.com/gostrtcpsdk/src`。
 
 ```go
 func Run(ctx context.Context, cfg Config, target string) error
@@ -45,4 +45,4 @@ cfg.TLS = &tls.Config{
 
 ## 示例环境变量
 
-`go run ./examples/basic` 从 `GOST_SERVER`、`GOST_BIND`、`GOST_TARGET`、`GOST_USER`、`GOST_PASSWORD` 读取配置。前三项必填；认证按需设置。示例只负责参数读取和 context，不属于 SDK 的额外配置框架。
+`go run ./src/examples/basic` 从 `GOST_SERVER`、`GOST_BIND`、`GOST_TARGET`、`GOST_USER`、`GOST_PASSWORD` 读取配置。前三项必填；认证按需设置。示例只负责参数读取和 context，不属于 SDK 的额外配置框架。

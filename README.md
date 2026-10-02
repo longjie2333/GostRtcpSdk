@@ -13,7 +13,7 @@ require example.com/gostrtcpsdk v0.0.0
 replace example.com/gostrtcpsdk => ../GostRtcpSdk
 ```
 
-路径相对于使用方的 `go.mod`，按实际目录调整，然后运行 `go mod tidy`。程序示例：
+路径相对于使用方的 `go.mod`，按实际目录调整；也可使用 `C:/.Projects/GostRtcpSdk` 绝对路径，然后运行 `go mod tidy`。程序示例：
 
 ```go
 package main
@@ -26,7 +26,7 @@ import (
     "os"
     "os/signal"
 
-    rtcp "example.com/gostrtcpsdk"
+    rtcp "example.com/gostrtcpsdk/src"
 )
 
 func main() {
@@ -54,7 +54,7 @@ gost -L "relay+tls://user:password@:1080?bind=true"
 
 - [完整配置、参数及生命周期说明](docs/configuration.md)
 - [已保留的源版本行为和限制](docs/behavior.md)
-- [可运行的代码示例](examples/basic/main.go)：从环境变量读取配置，`go run ./examples/basic`
+- [可运行的代码示例](src/examples/basic/main.go)：从环境变量读取配置，`go run ./src/examples/basic`
 
 **已知行为：**源版本的空主机绑定缺陷被保留，请显式写 `0.0.0.0:8080`，不要写 `:8080`。`TLS=nil` 默认不验证服务端身份；需要验证时提供 `Config.TLS`。复制与半关闭的已知边界详见行为说明。
 
@@ -76,7 +76,7 @@ pwsh -File scripts/check.ps1 -GostBinary C:/tools/gost.exe
 
 ## 工程与版本管理
 
-源码在仓库根目录，示例在 `examples/`，参数文档在 `docs/`。不需要上层 demo、report 或旧 rtcp 目录才能构建。
+源码与测试在 `src/`，示例在 `src/examples/`，参数文档在 `docs/`。不需要上层 demo、report 或旧 rtcp 目录才能构建。
 
 `main` 是唯一长期开发主线；短期分支、独立 PR、审查与检查、Squash 合入，以及不可变版本 Tag 的规则见 [AGENTS.md](AGENTS.md)。当前没有配置远程仓库，不声称已启用平台分支保护或完成远程 PR。首次建库提交只建立已经验证的 SDK 工程基线，尚未创建正式发布 Tag。
 
