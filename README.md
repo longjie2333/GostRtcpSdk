@@ -9,14 +9,13 @@
 
 ## 在其他 Go 项目使用
 
-当前是本地 Git 仓库，尚未发布到远程。`example.com/gostrtcpsdk` 是本地 module 标识，不是已发布下载地址。在使用方的 `go.mod` 中加入：
+仓库地址为 [github.com/longjie2333/GostRtcpSdk](https://github.com/longjie2333/GostRtcpSdk)，Go module 路径为 `github.com/longjie2333/GostRtcpSdk`，SDK 包位于 `/src`。在使用方项目中安装预览版：
 
-```go
-require example.com/gostrtcpsdk v0.0.0
-replace example.com/gostrtcpsdk => ../GostRtcpSdk
+```shell
+go get github.com/longjie2333/GostRtcpSdk/src@v0.1.0-alpha.1
 ```
 
-路径相对于使用方的 `go.mod`，按实际目录调整；也可使用 `C:/.Projects/GostRtcpSdk` 绝对路径，然后运行 `go mod tidy`。
+代码中使用 `import rtcp "github.com/longjie2333/GostRtcpSdk/src"`，不需要本地 `replace`。预览版需显式指定版本；变更与已知边界见 [v0.1.0-alpha.1 发布说明](docs/releases/v0.1.0-alpha.1.md)。
 
 ## 无本地监听端口的业务入口
 
@@ -65,7 +64,7 @@ import (
     "os"
     "os/signal"
 
-    rtcp "example.com/gostrtcpsdk/src"
+    rtcp "github.com/longjie2333/GostRtcpSdk/src"
 )
 
 func main() {
@@ -124,13 +123,15 @@ go test -race -count=1 -timeout=90s ./...
 pwsh -File scripts/check.ps1 -GostBinary C:/tools/gost.exe
 ```
 
-仅单元检查可使用 `-UnitOnly`，它不代表官方互通检查通过。完整检查会验证官方二进制版本，并拒绝测试 SKIP；同时对 SDK 和独立 Gin 示例执行 tidy、build、vet、race 测试。根目录的 `go test ./...` 不包含嵌套 Gin module，请用脚本执行完整检查。官方测试只访问本机回环地址。CI 定义见 [.github/workflows/checks.yml](.github/workflows/checks.yml)；尚未在远程平台运行。
+仅单元检查可使用 `-UnitOnly`，它不代表官方互通检查通过。完整检查会验证官方二进制版本，并拒绝测试 SKIP；同时对 SDK 和独立 Gin 示例执行 tidy、build、vet、race 测试。根目录的 `go test ./...` 不包含嵌套 Gin module，请用脚本执行完整检查。官方测试只访问本机回环地址。CI 定义见 [.github/workflows/checks.yml](.github/workflows/checks.yml)，运行记录见 [GitHub Actions](https://github.com/longjie2333/GostRtcpSdk/actions)。
 
 ## 工程与版本管理
 
 源码与测试在 `src/`，示例在 `src/examples/`，参数文档在 `docs/`。不需要上层 demo、report 或旧 rtcp 目录才能构建。
 
-`main` 是唯一长期开发主线；短期分支、独立 PR、审查与检查、Squash 合入，以及不可变版本 Tag 的规则见 [AGENTS.md](AGENTS.md)。当前没有配置远程仓库，不声称已启用平台分支保护或完成远程 PR。首次建库提交只建立已经验证的 SDK 工程基线，尚未创建正式发布 Tag。
+`main` 是唯一长期开发主线；短期分支、独立 PR、审查与检查、Squash 合入，以及不可变版本 Tag 的规则见 [AGENTS.md](AGENTS.md)。远端为上述 GitHub 仓库，分支保护和审查状态以平台实际配置为准。
+
+预览标签采用 `vX.Y.Z-alpha.N`、`vX.Y.Z-beta.N` 或 `vX.Y.Z-rc.N`，版本须先确认，标签不可移动或覆盖。[预览发布工作流](.github/workflows/preview-release.yml)验证标签指向 main 中的提交，执行完整官方互通检查后创建 GitHub Pre-release。SDK 通过 Go module 分发，Release 使用 GitHub 的源码归档，不发布服务端或示例二进制。
 
 ## 开源声明
 

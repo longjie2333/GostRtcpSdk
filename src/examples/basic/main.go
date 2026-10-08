@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/signal"
 
-	rtcp "example.com/gostrtcpsdk/src"
+	rtcp "github.com/longjie2333/GostRtcpSdk/src"
 )
 
 func main() {

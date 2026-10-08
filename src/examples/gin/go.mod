@@ -1,10 +1,10 @@
-module example.com/gostrtcpsdk-gin-example
+module github.com/longjie2333/GostRtcpSdk/src/examples/gin
 
 go 1.23.0
 
 require (
-	example.com/gostrtcpsdk v0.0.0
 	github.com/gin-gonic/gin v1.11.0
+	github.com/longjie2333/GostRtcpSdk v0.1.0-alpha.1
 )
 
 require (
@@ -43,4 +43,4 @@ require (
 	google.golang.org/protobuf v1.36.9 // indirect
 )
 
-replace example.com/gostrtcpsdk => ../../..
+replace github.com/longjie2333/GostRtcpSdk => ../../..

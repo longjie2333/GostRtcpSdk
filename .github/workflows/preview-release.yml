@@ -1,0 +1,48 @@
+name: Preview release
+
+on:
+  push:
+    tags: ['v*-*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate preview tag
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(alpha|beta|rc)\.(0|[1-9][0-9]*)$') { throw 'Expected an explicit SemVer preview tag' }
+          if ((git cat-file -t "refs/tags/$tag") -ne 'tag') { throw 'Release tags must be annotated' }
+          git merge-base --is-ancestor "$tag^{commit}" origin/main
+          if ($LASTEXITCODE -ne 0) { throw 'Release commit is not on main' }
+          if (-not (Test-Path "docs/releases/$tag.md")) { throw 'Release notes are missing' }
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+      - name: Download official GOST v3.3.0
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force .tools/gost | Out-Null
+          Invoke-WebRequest https://github.com/go-gost/gost/releases/download/v3.3.0/gost_3.3.0_windows_amd64.zip -OutFile .tools/gost.zip
+          Expand-Archive -LiteralPath .tools/gost.zip -DestinationPath .tools/gost
+          $actual = (Get-FileHash .tools/gost/gost.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '6f6b66cbdc4a5aa5685d0017abd3f65843a28bcc2bb4e5b78d6d12a844a51aa8') { throw 'Official binary SHA256 mismatch' }
+      - name: Complete SDK and Gin checks
+        shell: pwsh
+        run: ./scripts/check.ps1 -GostBinary .tools/gost/gost.exe
+      - name: Publish preview
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --verify-tag --prerelease --latest=false --title $env:GITHUB_REF_NAME --notes-file "docs/releases/$env:GITHUB_REF_NAME.md"
+          if ($LASTEXITCODE -ne 0) { throw 'Preview publication failed' }
