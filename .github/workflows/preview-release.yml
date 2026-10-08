@@ -3,12 +3,27 @@ name: Preview release
 on:
   push:
     tags: ['v*-*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing preview tag to publish
+        required: true
+        type: string
+  workflow_run:
+    workflows: ['SDK checks']
+    branches: [main]
+    types: [completed]
+
+concurrency:
+  group: preview-release
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   release:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: windows-latest
     permissions:
       contents: write
@@ -16,19 +31,49 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Validate preview tag
+      - name: Select and validate preview tag
+        id: preview
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIEW_TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
         run: |
-          $tag = $env:GITHUB_REF_NAME
-          if ($tag -notmatch '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(alpha|beta|rc)\.(0|[1-9][0-9]*)$') { throw 'Expected an explicit SemVer preview tag' }
+          $pattern = '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(alpha|beta|rc)\.(0|[1-9][0-9]*)$'
+          $tag = $env:PREVIEW_TAG
+          if (-not $tag) {
+            $tags = git tag --merged origin/main --sort=-version:refname
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot list preview tags on main' }
+            $tag = $tags | Where-Object { $_ -match $pattern } | Select-Object -First 1
+          }
+          if (-not $tag) {
+            'publish=false' >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          if ($tag -notmatch $pattern) { throw 'Expected an explicit SemVer preview tag' }
+          # checkout can fetch a tag's commit into its local tag ref. Restore
+          # the original remote tag object; this never writes a remote ref.
+          git fetch origin "+refs/tags/${tag}:refs/tags/${tag}"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch the original tag object' }
           if ((git cat-file -t "refs/tags/$tag") -ne 'tag') { throw 'Release tags must be annotated' }
           git merge-base --is-ancestor "$tag^{commit}" origin/main
           if ($LASTEXITCODE -ne 0) { throw 'Release commit is not on main' }
+          $releases = gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --json tagName | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot check published releases' }
+          if ($releases.tagName -contains $tag) {
+            'publish=false' >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+          git checkout --detach "$tag^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot check out the release commit' }
           if (-not (Test-Path "docs/releases/$tag.md")) { throw 'Release notes are missing' }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          'publish=true' >> $env:GITHUB_OUTPUT
       - uses: actions/setup-go@v5
+        if: steps.preview.outputs.publish == 'true'
         with:
           go-version: '1.23.x'
       - name: Download official GOST v3.3.0
+        if: steps.preview.outputs.publish == 'true'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force .tools/gost | Out-Null
@@ -37,12 +82,15 @@ jobs:
           $actual = (Get-FileHash .tools/gost/gost.exe -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne '6f6b66cbdc4a5aa5685d0017abd3f65843a28bcc2bb4e5b78d6d12a844a51aa8') { throw 'Official binary SHA256 mismatch' }
       - name: Complete SDK and Gin checks
+        if: steps.preview.outputs.publish == 'true'
         shell: pwsh
         run: ./scripts/check.ps1 -GostBinary .tools/gost/gost.exe
       - name: Publish preview
+        if: steps.preview.outputs.publish == 'true'
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          PREVIEW_TAG: ${{ steps.preview.outputs.tag }}
         run: |
-          gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY --verify-tag --prerelease --latest=false --title $env:GITHUB_REF_NAME --notes-file "docs/releases/$env:GITHUB_REF_NAME.md"
+          gh release create $env:PREVIEW_TAG --repo $env:GITHUB_REPOSITORY --verify-tag --prerelease --latest=false --title $env:PREVIEW_TAG --notes-file "docs/releases/$env:PREVIEW_TAG.md"
           if ($LASTEXITCODE -ne 0) { throw 'Preview publication failed' }

@@ -133,6 +133,8 @@ pwsh -File scripts/check.ps1 -GostBinary C:/tools/gost.exe
 
 预览标签采用 `vX.Y.Z-alpha.N`、`vX.Y.Z-beta.N` 或 `vX.Y.Z-rc.N`，版本须先确认，标签不可移动或覆盖。[预览发布工作流](.github/workflows/preview-release.yml)验证标签指向 main 中的提交，执行完整官方互通检查后创建 GitHub Pre-release。SDK 通过 Go module 分发，Release 使用 GitHub 的源码归档，不发布服务端或示例二进制。
 
+工作流在推送预览标签时执行，也会在 main 的 CI 成功后检查最新预览标签是否尚未发布；已存在的 Release 不重复创建。发布步骤失败时，可以修复发布流程后等待 main CI 成功，或手动指定原标签重试。重试仍检出并检查原标签的代码，不移动或覆盖标签。
+
 ## 开源声明
 
 本项目使用 [MIT License](LICENSE)。核心代码精简自 [go-gost/x v0.16.0](https://github.com/go-gost/x/tree/14fed91c6245289e2e92ea60a97332a62c90fad0)，保留原作者版权，来源映射见 [NOTICE](NOTICE)。
