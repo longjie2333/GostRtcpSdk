@@ -15,8 +15,8 @@ import (
 	"testing"
 	"time"
 
-	rtcp "example.com/gostrtcpsdk/src"
 	"github.com/gin-gonic/gin"
+	rtcp "github.com/longjie2333/GostRtcpSdk/src"
 )
 
 func TestGinThroughOfficialGOST(t *testing.T) {

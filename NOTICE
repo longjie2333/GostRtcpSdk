@@ -1,5 +1,8 @@
 Source and scope
 ================
+Project module: github.com/longjie2333/GostRtcpSdk
+SDK import path: github.com/longjie2333/GostRtcpSdk/src
+
 Derived from github.com/go-gost/x v0.16.0,
 commit 14fed91c6245289e2e92ea60a97332a62c90fad0 (MIT, Copyright 2016 ginuerzh),
 as required by github.com/go-gost/gost v3.3.0.

@@ -2,7 +2,7 @@
 
 ## 工程边界
 
-- Go 源码和测试放在 `src/`，示例放在 `src/examples/`；SDK 的 `go.mod`、`go.sum`、许可与工程配置保留在仓库根目录。SDK 导入路径为 `example.com/gostrtcpsdk/src`。Gin 示例使用独立消费方 module，避免给 SDK 加入框架依赖，完整检查同时覆盖两个 module。
+- Go 源码和测试放在 `src/`，示例放在 `src/examples/`；SDK 的 `go.mod`、`go.sum`、许可与工程配置保留在仓库根目录。SDK 导入路径为 `github.com/longjie2333/GostRtcpSdk/src`。Gin 示例使用独立消费方 module，避免给 SDK 加入框架依赖，完整检查同时覆盖两个 module。
 
 - 本项目仅是 Go 客户端 SDK，连接官方 GOST Relay+TLS 服务端，转发 TCP 目标或通过标准 `net.Listener` 直接交付业务连接；不加入公网服务端、UDP、旧 API 兼容层或通用代理框架。
 - 优先使用标准库及现有 relay/smux 能力。围绕 `Config + Client`、实例 Run、UpdateTarget 和 `Listen` 保持最小 API，避免没有当前需求的抽象、配置和中间层。业务入口不依赖具体 HTTP 框架，监听关闭允许请求收尾，context 取消强制释放隧道。
@@ -31,7 +31,7 @@
 5. 设置 `GOST_V3_BINARY` 为官方 v3.3.0，运行官方互通测试；不得将 SKIP 当作通过。推荐运行 `pwsh -File scripts/check.ps1 -GostBinary <path>`。
 6. 公共 API、参数、行为或依赖变化时，同步示例、README、配置文档与开源声明。
 
-当前仅有本地 Git 仓库：没有真实 PR 平台时，不伪造 PR 链接或审查批准，也不声称远程保护已启用。后续变更先留在短期分支，接入托管平台或团队 PR 审查系统后完成审查合入。接入远程时应要求 PR 与检查，关闭普通 merge/rebase 合入方式，启用 Squash，并保护 main 及发布 Tag。
+远端仓库为 `https://github.com/longjie2333/GostRtcpSdk`，默认分支为 main。使用真实 PR 与检查记录，不伪造审查批准或声称尚未核实的保护配置已启用。平台应要求 PR 与检查，关闭普通 merge/rebase 合入方式，启用 Squash，并保护 main 及发布 Tag；实际状态以 GitHub 配置为准。
 
 ## 正式发布
 
@@ -40,6 +40,7 @@
 - **正式版本 Tag 不可变**：创建后禁止移动、删除重建或强制覆盖。发现发布问题时提交独立修复，检查通过后发布新版本。
 - 一次正式发布可以包含多个已独立审查并 Squash 合入的功能/修复提交；不要求每个功能各发一个版本。
 - 不因普通开发自动打 Tag；本地建库不等同于正式发布。
+- 预览版本使用显式确认的 `vX.Y.Z-alpha.N`、`vX.Y.Z-beta.N` 或 `vX.Y.Z-rc.N`，同样保持 Tag 不可变。预览工作流校验注解标签及其 main 归属，完整检查通过后创建 GitHub Pre-release；不将预览版标记为稳定版或 latest。
 
 ## 版本系列发布分支
 

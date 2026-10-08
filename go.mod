@@ -1,4 +1,4 @@
-module example.com/gostrtcpsdk
+module github.com/longjie2333/GostRtcpSdk
 
 go 1.23
 

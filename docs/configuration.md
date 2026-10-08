@@ -1,6 +1,6 @@
 # 配置与 API
 
-包名是 `rtcp`，module 标识为 `example.com/gostrtcpsdk`，导入路径为 `example.com/gostrtcpsdk/src`。
+包名是 `rtcp`，module 标识为 `github.com/longjie2333/GostRtcpSdk`，导入路径为 `github.com/longjie2333/GostRtcpSdk/src`。
 
 ```go
 func Listen(ctx context.Context, cfg Config) (net.Listener, error)

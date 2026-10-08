@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	rtcp "example.com/gostrtcpsdk/src"
+	rtcp "github.com/longjie2333/GostRtcpSdk/src"
 )
 
 func ExampleClient_Run() {
@@ -35,13 +35,13 @@ func TestExternalGoModule(t *testing.T) {
 	}
 	root = filepath.Dir(root) // Tests run in the src package; replace targets the module root.
 	dir := t.TempDir()
-	mod := "module example.com/sdk-consumer\n\ngo 1.23\n\nrequire example.com/gostrtcpsdk v0.0.0\nreplace example.com/gostrtcpsdk => " + strconv.Quote(filepath.ToSlash(root)) + "\n"
+	mod := "module example.com/sdk-consumer\n\ngo 1.23\n\nrequire github.com/longjie2333/GostRtcpSdk v0.0.0\nreplace github.com/longjie2333/GostRtcpSdk => " + strconv.Quote(filepath.ToSlash(root)) + "\n"
 	program := `package main
 import (
  "context"
  "errors"
  "fmt"
- rtcp "example.com/gostrtcpsdk/src"
+ rtcp "github.com/longjie2333/GostRtcpSdk/src"
 )
 func main() {
  ctx, cancel := context.WithCancel(context.Background())
