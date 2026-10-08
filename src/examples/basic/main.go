@@ -9,7 +9,7 @@ import (
 	"os"
 	"os/signal"
 
-	rtcp "example.com/gostrtcpsdk"
+	rtcp "example.com/gostrtcpsdk/src"
 )
 
 func main() {
@@ -23,7 +23,11 @@ func main() {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	if err := rtcp.Run(ctx, cfg, target); err != nil && !errors.Is(err, context.Canceled) {
+	client, err := rtcp.NewClient(cfg, target)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := client.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatal(err)
 	}
 }

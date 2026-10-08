@@ -22,17 +22,26 @@ try {
     }
     $taskUnformatted = & gofmt -l .
     if ($LASTEXITCODE -ne 0 -or $taskUnformatted) { throw "Run gofmt before checking: $taskUnformatted" }
-    $taskBefore = @((Get-FileHash go.mod).Hash, (Get-FileHash go.sum).Hash)
-    Invoke-GoCheck @('mod','tidy')
-    $taskAfter = @((Get-FileHash go.mod).Hash, (Get-FileHash go.sum).Hash)
-    if (Compare-Object $taskBefore $taskAfter) { throw 'go mod tidy changed go.mod/go.sum; review and include these changes.' }
-    Invoke-GoCheck @('build','./...')
-    Invoke-GoCheck @('vet','./...')
     New-Item -ItemType Directory -Force .tools | Out-Null
-    & go test -json -race -count=1 -timeout=90s ./... | Tee-Object -FilePath .tools/checks.jsonl
-    if ($LASTEXITCODE -ne 0) { throw 'Go tests failed' }
-    $taskSkipped = Get-Content .tools/checks.jsonl | ForEach-Object { $_ | ConvertFrom-Json } | Where-Object { $_.Action -eq 'skip' -and $_.Test }
-    if (-not $UnitOnly -and $taskSkipped) { throw 'Complete checks must not skip tests' }
+    # Gin is an independent consuming module, not an SDK runtime dependency.
+    foreach ($taskModule in @(@{Path='.'; Log='checks.jsonl'}, @{Path='src/examples/gin'; Log='gin-checks.jsonl'})) {
+        Push-Location $taskModule.Path
+        try {
+            $taskBefore = @((Get-FileHash go.mod).Hash, (Get-FileHash go.sum).Hash)
+            Invoke-GoCheck @('mod','tidy')
+            $taskAfter = @((Get-FileHash go.mod).Hash, (Get-FileHash go.sum).Hash)
+            if (Compare-Object $taskBefore $taskAfter) { throw 'go mod tidy changed go.mod/go.sum; review and include these changes.' }
+            Invoke-GoCheck @('build','./...')
+            Invoke-GoCheck @('vet','./...')
+            $taskLog = Join-Path $taskRoot ".tools/$($taskModule.Log)"
+            & go test -json -race -count=1 -timeout=90s ./... | Tee-Object -FilePath $taskLog
+            if ($LASTEXITCODE -ne 0) { throw 'Go tests failed' }
+            $taskSkipped = Get-Content $taskLog | ForEach-Object { $_ | ConvertFrom-Json } | Where-Object { $_.Action -eq 'skip' -and $_.Test }
+            if (-not $UnitOnly -and $taskSkipped) { throw 'Complete checks must not skip tests' }
+        } finally {
+            Pop-Location
+        }
+    }
     Write-Output $(if ($UnitOnly) { 'PASS: unit checks (official integration excluded)' } else { 'PASS: complete SDK checks, no skipped tests' })
 } finally {
     $env:GOST_V3_BINARY = $taskPreviousBinary

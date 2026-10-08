@@ -115,13 +115,17 @@ func (e *events) Handle(_ context.Context, r slog.Record) error {
 func (e *events) WithAttrs([]slog.Attr) slog.Handler { return e }
 func (e *events) WithGroup(string) slog.Handler      { return e }
 
-func runClient(t *testing.T, cfg Config, target string) (*events, context.CancelFunc) {
+func startClient(t *testing.T, cfg Config, target string) (*Client, *events, context.CancelFunc) {
 	t.Helper()
 	e := &events{make(chan string, 32), make(chan string, 32), make(chan string, 64)}
 	cfg.Logger = slog.New(e)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	go func() { done <- Run(ctx, cfg, target) }()
+	client, err := NewClient(cfg, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { done <- client.Run(ctx) }()
 	var once sync.Once
 	stop := func() {
 		once.Do(func() {
@@ -137,6 +141,11 @@ func runClient(t *testing.T, cfg Config, target string) (*events, context.Cancel
 		})
 	}
 	t.Cleanup(stop)
+	return client, e, stop
+}
+
+func runClient(t *testing.T, cfg Config, target string) (*events, context.CancelFunc) {
+	_, e, stop := startClient(t, cfg, target)
 	return e, stop
 }
 

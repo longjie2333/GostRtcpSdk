@@ -12,13 +12,17 @@ import (
 	"testing"
 	"time"
 
-	rtcp "example.com/gostrtcpsdk"
+	rtcp "example.com/gostrtcpsdk/src"
 )
 
-func ExampleRun() {
+func ExampleClient_Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // The host may stop before a connection is established.
-	err := rtcp.Run(ctx, rtcp.Config{Server: "127.0.0.1:1080", Bind: "127.0.0.1:8080"}, "127.0.0.1:80")
+	client, err := rtcp.NewClient(rtcp.Config{Server: "127.0.0.1:1080", Bind: "127.0.0.1:8080"}, "127.0.0.1:80")
+	if err != nil {
+		panic(err)
+	}
+	err = client.Run(ctx)
 	fmt.Println(errors.Is(err, context.Canceled))
 	// Output: true
 }
@@ -29,6 +33,7 @@ func TestExternalGoModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	root = filepath.Dir(root) // Tests run in the src package; replace targets the module root.
 	dir := t.TempDir()
 	mod := "module example.com/sdk-consumer\n\ngo 1.23\n\nrequire example.com/gostrtcpsdk v0.0.0\nreplace example.com/gostrtcpsdk => " + strconv.Quote(filepath.ToSlash(root)) + "\n"
 	program := `package main
@@ -36,13 +41,17 @@ import (
  "context"
  "errors"
  "fmt"
- rtcp "example.com/gostrtcpsdk"
+ rtcp "example.com/gostrtcpsdk/src"
 )
 func main() {
  ctx, cancel := context.WithCancel(context.Background())
  cancel()
- err := rtcp.Run(ctx, rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:8080"}, "127.0.0.1:80")
+ client, err := rtcp.NewClient(rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:8080"}, "127.0.0.1:80")
+ if err != nil { panic(err) }
+ if err := client.UpdateTarget("localhost:81"); err != nil { panic(err) }
+ err = client.Run(ctx)
  if !errors.Is(err, context.Canceled) { panic(err) }
+ if _, err := rtcp.Listen(ctx, rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:0"}); !errors.Is(err, context.Canceled) { panic(err) }
  fmt.Println("external SDK consumer: OK")
 }
 `

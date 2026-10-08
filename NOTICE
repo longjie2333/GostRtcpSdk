@@ -4,13 +4,16 @@ Derived from github.com/go-gost/x v0.16.0,
 commit 14fed91c6245289e2e92ea60a97332a62c90fad0 (MIT, Copyright 2016 ginuerzh),
 as required by github.com/go-gost/gost v3.3.0.
 
-client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
+src/client.go: listener/rtcp/listener.go; connector/relay/bind.go, listener.go;
            internal/util/mux/mux.go; service/service.go; chain/router.go.
-pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
+src/pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction).
 
 Only the CLIENT for the user's single-hop relay+tls TCP BIND configuration is
-retained. The public endpoint runs official gost. Config and Run are the only
-exported declarations; there is no server or legacy API adapter.
+retained. The public endpoint runs official gost. The SDK adds Client instances and concurrent default-target updates.
+src/listener.go adds a standard net.Listener/net.Conn business entry, reusing
+the same BIND/Relay/smux protocol without dialing a local TCP target. Connection
+address metadata, graceful listener close, and reconnect ownership are SDK code.
+The old package-level Run is removed; there is no server or legacy adapter.
 Client response handling also follows connector/relay/listener.go. TLS dialing
 and stream handling now use crypto/tls.Dialer and smux.Stream directly.
 Read docs/behavior.md for preserved side effects and explicit boundaries.
@@ -19,3 +22,8 @@ Runtime protocol codecs and multiplexing use the original libraries:
 github.com/go-gost/relay v0.7.0 (MIT)
 github.com/xtaci/smux v1.5.31 (MIT)
 Their license texts are in THIRD_PARTY_LICENSES/.
+
+src/examples/gin is an independent consumer module using Gin v1.11.0 (MIT,
+https://github.com/gin-gonic/gin/blob/v1.11.0/LICENSE). Its own go.mod/go.sum
+record its dependencies; Gin is not an SDK runtime dependency. The example
+does not copy JmptJwxtAPI's business implementation.
