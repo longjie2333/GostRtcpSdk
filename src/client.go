@@ -1,6 +1,7 @@
 // Copyright (c) 2016 ginuerzh. Derived from go-gost/x v0.16.0; see NOTICE.
-// Package rtcp connects to an official gost Relay+TLS server and forwards
-// incoming remote TCP streams to a local target. It contains no server.
+// Package rtcp connects to an official gost Relay+TLS server. It delivers
+// remote TCP connections to applications with Listen or forwards them to a
+// TCP target with Client.Run. It contains no public-side server.
 package rtcp
 
 import (

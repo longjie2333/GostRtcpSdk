@@ -51,6 +51,7 @@ func main() {
  if err := client.UpdateTarget("localhost:81"); err != nil { panic(err) }
  err = client.Run(ctx)
  if !errors.Is(err, context.Canceled) { panic(err) }
+ if _, err := rtcp.Listen(ctx, rtcp.Config{Server:"127.0.0.1:1080", Bind:"127.0.0.1:0"}); !errors.Is(err, context.Canceled) { panic(err) }
  fmt.Println("external SDK consumer: OK")
 }
 `

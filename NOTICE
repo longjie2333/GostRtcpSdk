@@ -10,6 +10,9 @@ src/pipe.go:   internal/net/pipe.go and transport.go (32 KiB per copy direction)
 
 Only the CLIENT for the user's single-hop relay+tls TCP BIND configuration is
 retained. The public endpoint runs official gost. The SDK adds Client instances and concurrent default-target updates.
+src/listener.go adds a standard net.Listener/net.Conn business entry, reusing
+the same BIND/Relay/smux protocol without dialing a local TCP target. Connection
+address metadata, graceful listener close, and reconnect ownership are SDK code.
 The old package-level Run is removed; there is no server or legacy adapter.
 Client response handling also follows connector/relay/listener.go. TLS dialing
 and stream handling now use crypto/tls.Dialer and smux.Stream directly.
@@ -19,3 +22,8 @@ Runtime protocol codecs and multiplexing use the original libraries:
 github.com/go-gost/relay v0.7.0 (MIT)
 github.com/xtaci/smux v1.5.31 (MIT)
 Their license texts are in THIRD_PARTY_LICENSES/.
+
+src/examples/gin is an independent consumer module using Gin v1.11.0 (MIT,
+https://github.com/gin-gonic/gin/blob/v1.11.0/LICENSE). Its own go.mod/go.sum
+record its dependencies; Gin is not an SDK runtime dependency. The example
+does not copy JmptJwxtAPI's business implementation.
